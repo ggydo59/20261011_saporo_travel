@@ -1,0 +1,13 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# 예약번호 등 개인정보가 담긴 원본 핸드오프 문서 (공개 저장소에 올리지 않음)
+docs/

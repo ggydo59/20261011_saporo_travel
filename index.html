@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>삿포로 가족여행 · 2026.10.31 ~ 11.4</title>
+  <meta name="description" content="삿포로 가족여행 일정과 일차별 동선 지도" />
+  <meta property="og:title" content="🍁 삿포로 가족여행" />
+  <meta property="og:description" content="2026.10.31 ~ 11.4 · 일정과 동선 지도" />
+  <meta name="theme-color" content="#5c1019" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <header class="hero" id="hero">
+    <div class="leaves" id="leaves"></div>
+    <div class="hero-inner">
+      <p class="hero-kicker">2026.10.31 (토) – 11.4 (수) · 4박 5일</p>
+      <h1>삿포로 단풍 가족여행</h1>
+      <p class="hero-sub"><span id="dday"></span> · 30대 2명 · 50대 2명</p>
+      <p class="hero-hint">여기를 눌러보세요 🍁</p>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="schedule" role="tab">📅 일정</button>
+    <button class="tab" data-tab="map" role="tab">🗺️ 지도</button>
+    <button class="tab" data-tab="info" role="tab">🧳 준비</button>
+  </nav>
+
+  <div class="plan-switch" id="planSwitch" aria-label="일정안 선택"></div>
+
+  <main>
+    <section id="tab-schedule" class="panel active">
+      <div id="planSummary"></div>
+      <div id="days"></div>
+    </section>
+
+    <section id="tab-map" class="panel">
+      <div class="day-chips" id="dayChips"></div>
+      <div id="map"></div>
+      <div id="mapActions"></div>
+      <ol class="stop-list" id="stopList"></ol>
+    </section>
+
+    <section id="tab-info" class="panel">
+      <div id="info"></div>
+    </section>
+  </main>
+
+  <footer class="foot">즐거운 가족여행 되세요 🧡</footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="assets/data.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
