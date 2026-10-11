@@ -64,8 +64,21 @@
   }
 
   /* ---------- 일정 탭 ---------- */
+  const yen = (n) => `¥${n.toLocaleString("ko-KR")}`;
+  const sumCost = (day) => (day.cost || []).reduce((a, [, v]) => a + v, 0);
+
+  function costHtml(day) {
+    if (!day.cost) return "";
+    return `
+      <details class="cost">
+        <summary><span>💴 예상 비용 (4인)</span><b>약 ${yen(Math.round(sumCost(day) / 100) * 100)}</b></summary>
+        <ul>${day.cost.map(([label, v]) => `<li><span>${esc(label)}</span><span>${yen(v)}</span></li>`).join("")}</ul>
+      </details>`;
+  }
+
   function renderSchedule() {
     const plan = PLANS[state.plan];
+    const total = plan.days.reduce((a, d) => a + sumCost(d), 0);
     const fatigue = [1, 2, 3, 4, 5].map((n) => `<i class="${n <= plan.fatigue ? "on" : ""}"></i>`).join("");
     $("#planSummary").innerHTML = `
       <div class="card summary">
@@ -76,6 +89,7 @@
           <div><span>렌터카</span>${esc(plan.car)}</div>
           <div><span>피로도</span><b class="fatigue">${fatigue}</b></div>
           <div><span>공유</span><button class="btn" id="shareBtn" style="padding:2px 8px">🔗 링크 공유</button></div>
+          ${total ? `<div class="total"><span>현지 예상 경비 (4인 · 5일)</span><b>약 ${yen(Math.round(total / 1000) * 1000)}</b> <small>1인 약 ${yen(Math.round(total / 4 / 100) * 100)}</small>${plan.costNote ? `<em>${esc(plan.costNote)}</em>` : ""}</div>` : ""}
         </div>
         <div class="proscons">
           <div class="pro"><b>좋은 점</b><ul>${plan.pros.map((t) => `<li>${esc(t)}</li>`).join("")}</ul></div>
@@ -103,6 +117,7 @@
             </button>
             <div class="day-body"><div><div class="day-inner">
               <ul class="timeline">${items}</ul>
+              ${costHtml(day)}
               <div class="day-foot">
                 <button class="btn solid" data-goto-map="${i}">🗺️ 지도에서 동선 보기</button>
                 <a class="btn" href="${gmapDay(day)}" target="_blank" rel="noopener">구글맵 열기</a>
