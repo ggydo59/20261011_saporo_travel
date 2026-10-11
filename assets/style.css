@@ -49,8 +49,7 @@ a { color: var(--maple); }
   right: 0;
   bottom: -1px;
   height: 38px;
-  background: var(--bg);
-  clip-path: path("M0 38 L0 22 C 120 4, 240 4, 360 18 C 480 32, 620 34, 760 16 C 900 0, 1100 6, 1400 24 L1400 38 Z");
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 40' preserveAspectRatio='none'%3E%3Cpath d='M0 40V22C150 4 300 4 450 18S750 34 900 16 1100 6 1200 20V40Z' fill='%23f6efe4'/%3E%3C/svg%3E") bottom / 100% 100% no-repeat;
 }
 .hero-inner { position: relative; z-index: 2; max-width: 760px; margin: 0 auto; }
 .hero-kicker { margin: 0; font-size: 14px; color: #f3d9a4; letter-spacing: 0.2px; }

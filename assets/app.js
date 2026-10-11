@@ -6,8 +6,10 @@
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   const params = new URLSearchParams(location.search);
+  const PLAN_KEYS = Object.keys(PLANS);
+  const SINGLE_PLAN = PLAN_KEYS.length === 1;
   const state = {
-    plan: PLANS[params.get("plan")] ? params.get("plan") : (PLANS[localStorage.getItem("plan")] ? localStorage.getItem("plan") : "A"),
+    plan: PLANS[params.get("plan")] ? params.get("plan") : (PLANS[localStorage.getItem("plan")] ? localStorage.getItem("plan") : PLAN_KEYS[0]),
     tab: "schedule",
     mapDay: "all",
   };
@@ -43,6 +45,7 @@
 
   /* ---------- 일정안 선택 ---------- */
   function renderPlanSwitch() {
+    if (SINGLE_PLAN) return;
     $("#planSwitch").innerHTML = Object.entries(PLANS)
       .map(([key, p]) => `<button class="plan-btn ${key === state.plan ? "active" : ""}" data-plan="${key}"><b>${p.name}</b><small>${esc(p.title)}</small></button>`)
       .join("");
@@ -66,7 +69,7 @@
     const fatigue = [1, 2, 3, 4, 5].map((n) => `<i class="${n <= plan.fatigue ? "on" : ""}"></i>`).join("");
     $("#planSummary").innerHTML = `
       <div class="card summary">
-        <h2>${plan.name} · ${esc(plan.title)}</h2>
+        <h2>${SINGLE_PLAN ? "확정 일정" : plan.name} · ${esc(plan.title)}</h2>
         <p>${esc(plan.summary)}</p>
         <div class="meta">
           <div><span>하이라이트</span>${esc(plan.highlight)}</div>
@@ -390,7 +393,7 @@
     state.tab = tab;
     document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
     document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("active", p.id === `tab-${tab}`));
-    $("#planSwitch").classList.toggle("hidden", tab === "info");
+    $("#planSwitch").classList.toggle("hidden", SINGLE_PLAN || tab === "info");
     if (tab === "map") {
       if (!map) initMap();
       map.invalidateSize();
@@ -426,6 +429,7 @@
   initLeaves();
   renderDday();
   renderPlanSwitch();
+  $("#planSwitch").classList.toggle("hidden", SINGLE_PLAN);
   renderSchedule();
   renderInfo();
 })();
