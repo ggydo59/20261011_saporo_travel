@@ -98,7 +98,7 @@
         </div>
       </div>`;
 
-    const today = params.get("today") || localISO(new Date());
+    const today = params.get("today") || localISO();
     const order = plan.days.map((_, i) => i);
     if (plan.days.some((d) => d.iso === today)) {
       const status = (d) => (d.iso === today ? 0 : d.iso > today ? 1 : 2);
@@ -126,12 +126,14 @@
           .join("");
         return `
           <article class="card day ${isPast ? "past" : "open"} ${isToday ? "today" : ""} reveal" data-day="${i}" style="--day:${color}">
-            <button class="day-head" data-toggle="${i}">
-              <span class="day-badge"><b>${esc(day.date)}</b><small>${esc(day.dow)}</small></span>
-              <span class="day-title"><small>${i + 1}일차${isToday ? ` <em class="tag-today">오늘</em>` : ""}${isPast ? ` <em class="tag-past">지난 일정</em>` : ""}</small><div>${esc(day.title)}</div></span>
-              <span class="wx" data-wx="${i}"></span>
-              <span class="chev">▼</span>
-            </button>
+            <div class="day-top">
+              <button class="day-head" data-toggle="${i}">
+                <span class="day-badge"><b>${esc(day.date)}</b><small>${esc(day.dow)}</small></span>
+                <span class="day-title"><small>${i + 1}일차${isToday ? ` <em class="tag-today">오늘</em>` : ""}${isPast ? ` <em class="tag-past">지난 일정</em>` : ""}</small><div>${esc(day.title)}</div></span>
+              </button>
+              <a class="wx" data-wx="${i}" href="https://search.naver.com/search.naver?query=${encodeURIComponent(`${WX_PLACES[day.wx].name} 날씨`)}" target="_blank" rel="noopener" aria-label="${esc(WX_PLACES[day.wx].name)} 날씨 (네이버)"></a>
+              <button class="chev" data-toggle="${i}" aria-label="펼치기">▼</button>
+            </div>
             <div class="day-body"><div><div class="day-inner">
               <ul class="timeline">${items}</ul>
               ${costHtml(day)}
@@ -148,19 +150,29 @@
   }
 
   /* ---------- 날씨 ---------- */
-  const localISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  const WX_ICON = (c) =>
-    c === 0 ? "☀️" : c <= 2 ? "🌤️" : c === 3 ? "☁️" : c <= 48 ? "🌫️" : c <= 57 ? "🌦️" : c <= 67 ? "🌧️" : c <= 77 ? "❄️" : c <= 82 ? "🌧️" : c <= 86 ? "🌨️" : "⛈️";
+  const localISO = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  // WMO 날씨 코드 → [아이콘, 이름, 종류]
+  const WX_KIND = (c) =>
+    c === 0 ? ["☀️", "맑음", "sun"]
+    : c <= 2 ? ["⛅", "구름 조금", "sun"]
+    : c === 3 ? ["☁️", "흐림", "cloud"]
+    : c <= 48 ? ["🌫️", "안개", "cloud"]
+    : c <= 57 ? ["🌦️", "이슬비", "rain"]
+    : c <= 67 ? ["☔", "비", "rain"]
+    : c <= 77 ? ["⛄", "눈", "snow"]
+    : c <= 82 ? ["☔", "소나기", "rain"]
+    : c <= 86 ? ["⛄", "눈", "snow"]
+    : ["⚡", "뇌우", "rain"];
   const WX_TTL = 3 * 3600 * 1000;
 
   async function loadWeather(days) {
-    let cache = JSON.parse(localStorage.getItem("wx") || "null");
+    let cache = JSON.parse(localStorage.getItem("wx2") || "null");
     if (!cache || Date.now() - cache.at > WX_TTL) {
       const keys = Object.keys(WX_PLACES);
       const url = new URL("https://api.open-meteo.com/v1/forecast");
       url.searchParams.set("latitude", keys.map((k) => WX_PLACES[k].lat).join(","));
       url.searchParams.set("longitude", keys.map((k) => WX_PLACES[k].lng).join(","));
-      url.searchParams.set("daily", "weather_code,temperature_2m_max,temperature_2m_min");
+      url.searchParams.set("daily", "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max");
       url.searchParams.set("timezone", "Asia/Tokyo");
       url.searchParams.set("start_date", TRIP.start);
       url.searchParams.set("end_date", TRIP.end);
@@ -172,10 +184,10 @@
         const byPlace = {};
         keys.forEach((k, n) => {
           const d = list[n].daily;
-          byPlace[k] = Object.fromEntries(d.time.map((t, j) => [t, [d.weather_code[j], d.temperature_2m_max[j], d.temperature_2m_min[j]]]));
+          byPlace[k] = Object.fromEntries(d.time.map((t, j) => [t, [d.weather_code[j], d.temperature_2m_max[j], d.temperature_2m_min[j], d.precipitation_probability_max[j]]]));
         });
         cache = { at: Date.now(), byPlace };
-        localStorage.setItem("wx", JSON.stringify(cache));
+        localStorage.setItem("wx2", JSON.stringify(cache));
       } catch (_) {
         return;
       }
@@ -184,9 +196,13 @@
       const v = cache.byPlace[day.wx]?.[day.iso];
       const el = document.querySelector(`[data-wx="${i}"]`);
       if (!v || !el || v[1] == null) return;
-      const [code, hi, lo] = v;
-      el.innerHTML = `<span class="wx-icon">${WX_ICON(code)}</span><span class="wx-t"><b>${Math.round(hi)}°</b><i>${Math.round(lo)}°</i></span>`;
-      el.title = `${WX_PLACES[day.wx].name} 예보 · 최고 ${hi}° / 최저 ${lo}°`;
+      const [code, hi, lo, pop] = v;
+      const [icon, label, kind] = WX_KIND(code);
+      el.className = `wx wx-${kind}`;
+      el.innerHTML = `
+        <span class="wx-row"><span class="wx-icon">${icon}</span><b>${label}</b>${pop != null && kind !== "sun" ? `<small>${pop}%</small>` : ""}</span>
+        <span class="wx-temp"><b>${Math.round(hi)}°</b> / <i>${Math.round(lo)}°</i></span>`;
+      el.title = `${WX_PLACES[day.wx].name} 예보 · ${label} · 최고 ${hi}° / 최저 ${lo}° · 네이버 날씨로 이동`;
     });
   }
 

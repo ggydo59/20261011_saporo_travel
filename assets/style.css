@@ -228,12 +228,14 @@ main { max-width: 760px; margin: 0 auto; padding: 14px 16px 24px; }
 
 /* ---------- 일차 카드 ---------- */
 .day { padding: 0; overflow: hidden; border-left: 5px solid var(--day); transition: box-shadow 0.25s; }
+.day-top { display: flex; align-items: center; gap: 8px; padding-right: 14px; }
 .day-head {
   display: flex;
   align-items: center;
   gap: 12px;
-  width: 100%;
-  padding: 14px 16px;
+  flex: 1;
+  min-width: 0;
+  padding: 14px 0 14px 16px;
   border: 0;
   background: none;
   text-align: left;
@@ -271,6 +273,10 @@ main { max-width: 760px; margin: 0 auto; padding: 14px 16px 24px; }
   align-items: center;
   justify-content: center;
   font-size: 12px;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
   transition: transform 0.35s var(--ease), background 0.2s;
 }
 .day.open .chev { transform: rotate(180deg); background: var(--maple-soft); color: var(--maple); }
@@ -280,12 +286,35 @@ main { max-width: 760px; margin: 0 auto; padding: 14px 16px 24px; }
 .tag-today { background: var(--day); color: #fff; }
 .tag-past { background: var(--bg); color: var(--muted); }
 
-.wx { flex: none; display: flex; align-items: center; gap: 4px; min-width: 0; }
+.wx {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 5px 8px;
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--ink);
+  text-decoration: none;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
 .wx:empty { display: none; }
-.wx-icon { font-size: 20px; line-height: 1; }
-.wx-t { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.15; font-variant-numeric: tabular-nums; }
-.wx-t b { font-size: 14px; color: #c0392b; }
-.wx-t i { font-style: normal; font-size: 12px; color: #2f6fb0; }
+.wx-row { display: flex; align-items: center; gap: 3px; font-size: 12px; }
+.wx-row b { font-size: 12.5px; }
+.wx-row small { font-size: 11px; color: var(--muted); }
+.wx-icon { font-size: 17px; line-height: 1; }
+.wx-temp { font-size: 12px; color: var(--muted); }
+.wx-temp b { color: #c0392b; }
+.wx-temp i { font-style: normal; font-weight: 700; color: #2f6fb0; }
+.wx-snow { background: #e6f0fb; }
+.wx-snow .wx-row b { color: #2f6fb0; }
+.wx-rain { background: #e8eef3; }
+.wx-rain .wx-row b { color: #3b6b8f; }
+.wx-cloud { background: #eeecea; }
+.wx-sun { background: #fdf1d6; }
+.wx-sun .wx-row b { color: #b07a07; }
 
 .more summary { cursor: pointer; list-style: none; }
 .more summary::-webkit-details-marker { display: none; }
