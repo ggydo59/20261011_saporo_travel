@@ -77,6 +77,15 @@
       </details>`;
   }
 
+  // note: 문자열 또는 목록. "* "로 시작하는 줄은 대안(Plan B)으로 강조
+  function noteHtml(note) {
+    if (!note) return "";
+    if (!Array.isArray(note)) return `<span class="t-note">${esc(note)}</span>`;
+    return `<ul class="t-notes">${note
+      .map((n) => (n.startsWith("* ") ? `<li class="alt">${esc(n.slice(2))}</li>` : `<li>${esc(n)}</li>`))
+      .join("")}</ul>`;
+  }
+
   function renderSchedule() {
     const plan = PLANS[state.plan];
     const total = plan.days.reduce((a, d) => a + sumCost(d), 0);
@@ -120,7 +129,7 @@
             <li class="${it.type}">
               <span class="t-time">${esc(it.time)}</span>
               <span class="t-icon">${ICONS[it.type] || "•"}</span>
-              <span class="t-text">${text}${it.note ? `<span class="t-note">${esc(it.note)}</span>` : ""}</span>
+              <span class="t-text">${text}${noteHtml(it.note)}</span>
             </li>`;
           })
           .join("");
@@ -519,6 +528,17 @@
         <div class="progress"><div style="width:${(done / FOOD.matches.length) * 100}%"></div></div>
         <small class="hint">${done} / ${FOOD.matches.length} 선택</small>
       </div>
+      ${(FOOD.guides || [])
+        .map((g) => `
+          <article class="card guide reveal">
+            <div class="match-head"><small>${esc(g.when)}</small><b>${esc(g.title)}</b></div>
+            ${noteHtml(g.note)}
+            <ul class="guide-list">${g.items
+              .map((x) => `<li><a href="${foodLink(x)}" target="_blank" rel="noopener">${esc(x.name)} ↗</a><small>${esc(x.area)}</small><span>${esc(x.desc)}</span></li>`)
+              .join("")}</ul>
+            ${g.alt ? `<div class="guide-alt"><em>대기가 길면</em><a href="${foodLink(g.alt)}" target="_blank" rel="noopener">${esc(g.alt.name)} ↗</a><small>${esc(g.alt.area)}</small><span>${esc(g.alt.desc)}</span></div>` : ""}
+          </article>`)
+        .join("")}
       ${matches}
       <div class="food-actions">
         <button class="btn solid" id="foodShare">📤 결과 보내기</button>
