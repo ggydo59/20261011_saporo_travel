@@ -67,7 +67,7 @@ const PLACES = {
 const DAY_ARRIVE = {
   date: "10/31", dow: "토", iso: "2026-10-31", wx: "sapporo", title: "도착 · 공항버스 · 스프카레 · 스스키노",
   mode: "transit",
-  route: ["cts", "busPrince", "hotel1", "treasure", "kinotoya", "tanuki", "daiichi", "hotel1"],
+  route: ["cts", "busPrince", "hotel1", "tanuki", "treasure", "kinotoya", "susukino", "daiichi", "hotel1"],
   items: [
     { time: "12:25", type: "flight", text: "인천 T1 출발 (제주항공 7C1503)" },
     { time: "15:00", type: "flight", text: "신치토세공항 도착 · 입국심사·수하물", note: "보통 1시간 내외 소요" },
@@ -97,8 +97,13 @@ const DAY_ARRIVE = {
       ] },
     { time: "17:45", type: "hotel", text: "첫 숙소 체크인 · 짐 풀기", place: "hotel1",
       note: ["정류장에서 도보 5분", "호스트에게 체크인 18시경이라고 미리 알리기"] },
-    { time: "18:10", type: "move", text: "지하철 도자이선 니시11초메역 → 오도리역 (2정거장)",
-      note: ["숙소에서 니시11초메역 도보 약 10분", "피곤하면 택시 약 7분 (1대 약 1,300엔)"] },
+    { time: "18:05", type: "see", text: "다누키코지 상점가를 따라 걸어서 스프카레 가게로 (20~25분)", place: "tanuki",
+      note: [
+        "숙소 → 북쪽 1블록 미나미3조 거리 → 니시7초메부터 지붕 있는 아케이드",
+        "트레져는 아케이드 동쪽 끝(니시1초메)에 바로 있음",
+        "가게별 도보: 오쿠시바 약 15분 · 트레져 약 20분 · 가라쿠 본점 약 25분",
+        "* 눈이 많이 오거나 힘드시면 택시 약 7분 (1대 약 1,300엔)",
+      ] },
     { time: "18:30", type: "food", text: "저녁 외식 — 스프카레 (대기 적은 곳으로)", place: "treasure",
       note: [
         "후보는 맛집 탭 '스프카레 후보' (트레져·가라쿠는 걸어서 5분 거리)",
@@ -107,8 +112,8 @@ const DAY_ARRIVE = {
       ] },
     { time: "19:40", type: "food", text: "후식 — 기노토야 소프트아이스크림 (오도리공원점)", place: "kinotoya",
       note: ["20:00 마감이라 식사 후 바로 가기", "극상 우유 소프트 590엔"] },
-    { time: "19:55", type: "see", text: "다누키코지 상점가 구경", place: "tanuki",
-      note: ["지붕 있는 아케이드라 눈 와도 OK", "돈키호테·드럭스토어도 이 거리에"] },
+    { time: "19:55", type: "see", text: "스스키노 밤거리 구경 (토요일·할로윈)", place: "susukino",
+      note: ["스스키노 교차로 니카 위스키 간판 앞 사진", "다누키코지에 돈키호테·드럭스토어도 있음"] },
     { time: "20:15", type: "shop", text: "코코노 스스키노 — 동구리 빵 · 다이이치 마트", place: "daiichi",
       note: ["동구리 지하 1층, 다이이치 지하 2층 · 둘 다 21:00 마감", "다음 날 아침 빵·과일 사기", "늦은 시간 반찬에 半額(반값) 스티커"] },
     { time: "20:45", type: "hotel", text: "숙소로 (도보 약 12분)", place: "hotel1" },
@@ -116,7 +121,6 @@ const DAY_ARRIVE = {
   cost: [
     ["로손 주먹밥·샌드위치·음료", 2000],
     ["공항버스 (1,500엔 × 4)", 6000],
-    ["지하철 니시11초메 → 오도리 (210엔 × 4)", 840],
     ["저녁 스프카레 (1,800엔 × 4)", 7200],
     ["기노토야 소프트 (590엔 × 4)", 2360],
     ["동구리 빵 · 마트 아침거리", 2500],
