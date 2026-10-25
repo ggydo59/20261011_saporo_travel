@@ -65,13 +65,14 @@
 
   /* ---------- 일정 탭 ---------- */
   const yen = (n) => `¥${n.toLocaleString("ko-KR")}`;
+  const manwon = (y) => `${(Math.round((y * TRIP.krwPerYen) / 1000) / 10).toLocaleString("ko-KR")}만원`;
   const sumCost = (day) => (day.cost || []).reduce((a, [, v]) => a + v, 0);
 
   function costHtml(day) {
     if (!day.cost) return "";
     return `
       <details class="cost">
-        <summary><span>💴 예상 비용 (4인)</span><b>약 ${yen(Math.round(sumCost(day) / 100) * 100)}</b></summary>
+        <summary><span>💴 예상 비용 (4인)</span><b>약 ${yen(Math.round(sumCost(day) / 100) * 100)}</b><small class="krw">${manwon(sumCost(day))}</small></summary>
         <ul>${day.cost.map(([label, v]) => `<li><span>${esc(label)}</span><span>${yen(v)}</span></li>`).join("")}</ul>
       </details>`;
   }
@@ -89,7 +90,7 @@
           <div><span>렌터카</span>${esc(plan.car)}</div>
           <div><span>피로도</span><b class="fatigue">${fatigue}</b></div>
           <div><span>공유</span><button class="btn" id="shareBtn" style="padding:2px 8px">🔗 링크 공유</button></div>
-          ${total ? `<div class="total"><span>현지 예상 경비 (4인 · 5일)</span><b>약 ${yen(Math.round(total / 1000) * 1000)}</b> <small>1인 약 ${yen(Math.round(total / 4 / 100) * 100)}</small>${plan.costNote ? `<em>${esc(plan.costNote)}</em>` : ""}</div>` : ""}
+          ${total ? `<div class="total"><span>현지 예상 경비 (4인 · 5일)</span><b>약 ${yen(Math.round(total / 1000) * 1000)}</b> <small>약 ${manwon(total)} · 1인 약 ${yen(Math.round(total / 4 / 100) * 100)}</small>${plan.costNote ? `<em>${esc(plan.costNote)}</em>` : ""}<em>총 예산 ${(TRIP.budgetKrw / 10000).toLocaleString("ko-KR")}만원 (항공 포함) · 환율 100엔 = 약 ${Math.round(TRIP.krwPerYen * 100)}원 기준</em></div>` : ""}
         </div>
         <div class="proscons">
           <div class="pro"><b>좋은 점</b><ul>${plan.pros.map((t) => `<li>${esc(t)}</li>`).join("")}</ul></div>
@@ -403,12 +404,81 @@
     $("#checkBar").style.width = `${(done / CHECKLIST.length) * 100}%`;
   }
 
+  /* ---------- 맛집 탭 ---------- */
+  const foodLink = (o) => (o.cid ? `https://maps.google.com/?cid=${o.cid}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(o.q)}`);
+  const loadPicks = () => JSON.parse(localStorage.getItem("foodPicks") || "{}");
+  const priceText = (p) => `1인 ${yen(p[0])}~${p[1].toLocaleString("ko-KR")} (약 ${manwon(p[0]).replace("만원", "")}~${manwon(p[1])})`;
+
+  function renderFood() {
+    const picks = loadPicks();
+    const done = FOOD.matches.filter((m) => picks[m.id] !== undefined).length;
+    const matches = FOOD.matches
+      .map((m) => {
+        const picked = picks[m.id];
+        const opts = m.options
+          .map((o, k) => `
+            <button class="opt ${picked === k ? "picked" : ""} ${picked !== undefined && picked !== k ? "dim" : ""}" data-pick="${m.id}:${k}">
+              <span class="opt-letter">${k ? "B" : "A"}</span>
+              <b>${esc(o.name)}</b>
+              ${o.price ? `<span class="opt-price">${priceText(o.price)}</span>` : ""}
+              <span class="opt-desc">${esc(o.desc)}</span>
+              ${o.extra ? `<span class="opt-tag">추천 추가</span>` : ""}
+            </button>`)
+          .join(`<span class="vs">VS</span>`);
+        return `
+          <article class="card match reveal">
+            <div class="match-head"><small>${esc(m.when)}</small><b>${esc(m.title)}</b>${picked !== undefined ? `<i>✔ 골랐어요</i>` : ""}</div>
+            ${m.note ? `<p class="match-note">${esc(m.note)}</p>` : ""}
+            <div class="opts">${opts}</div>
+            <div class="opt-links">${m.options.map((o, k) => `<a href="${foodLink(o)}" target="_blank" rel="noopener">${k ? "B" : "A"} 구글맵 ↗</a>`).join("")}</div>
+          </article>`;
+      })
+      .join("");
+
+    $("#food").innerHTML = `
+      <div class="card food-intro">
+        <h2>🍜 맛집 고르기</h2>
+        <p>둘 중 먹고 싶은 쪽을 누르세요. 다 고르면 아래 버튼으로 결과를 카톡에 보내주세요.</p>
+        <label class="food-name">고르는 사람 <input id="foodName" placeholder="예: 엄마" value="${esc(localStorage.getItem("foodName") || "")}"></label>
+        <div class="progress"><div style="width:${(done / FOOD.matches.length) * 100}%"></div></div>
+        <small class="hint">${done} / ${FOOD.matches.length} 선택</small>
+      </div>
+      ${matches}
+      <div class="food-actions">
+        <button class="btn solid" id="foodShare">📤 결과 보내기</button>
+        <button class="btn" id="foodReset">다시 고르기</button>
+      </div>
+      <div class="card info">
+        <h3>📌 그 외 저장한 곳</h3>
+        <ul class="extras">${FOOD.extras.map((x) => `<li><a href="${foodLink(x)}" target="_blank" rel="noopener">${esc(x.name)} ↗</a><span>${esc(x.desc)}</span></li>`).join("")}</ul>
+      </div>`;
+    observeReveal();
+  }
+
+  async function shareFood() {
+    const picks = loadPicks();
+    const who = localStorage.getItem("foodName") || "익명";
+    const lines = FOOD.matches.map((m) => `· ${m.when} ${m.title}: ${picks[m.id] !== undefined ? m.options[picks[m.id]].name : "(안 고름)"}`);
+    const text = `🍁 삿포로 맛집 투표 — ${who}\n${lines.join("\n")}`;
+    if (navigator.share) {
+      try { await navigator.share({ title: "삿포로 맛집 투표", text }); } catch (_) { /* 취소 */ }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      alert("결과를 복사했어요. 카톡에 붙여넣기 하세요!");
+    } catch (_) {
+      prompt("아래 내용을 복사하세요", text);
+    }
+  }
+
   /* ---------- 탭 ---------- */
   function setTab(tab) {
     state.tab = tab;
     document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
     document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("active", p.id === `tab-${tab}`));
-    $("#planSwitch").classList.toggle("hidden", SINGLE_PLAN || tab === "info");
+    $("#planSwitch").classList.toggle("hidden", SINGLE_PLAN || tab !== "schedule");
+    if (tab === "food") renderFood();
     if (tab === "map") {
       if (!map) initMap();
       map.invalidateSize();
@@ -419,9 +489,24 @@
 
   /* ---------- 이벤트 ---------- */
   document.addEventListener("click", (e) => {
-    const t = e.target.closest("[data-tab],[data-plan],[data-toggle],[data-goto-map],[data-mapday],#shareBtn");
+    const t = e.target.closest("[data-tab],[data-plan],[data-toggle],[data-goto-map],[data-mapday],[data-pick],#shareBtn,#foodShare,#foodReset");
     if (!t) return;
-    if (t.dataset.tab) setTab(t.dataset.tab);
+    if (t.dataset.pick) {
+      const [id, k] = t.dataset.pick.split(":");
+      const picks = loadPicks();
+      if (picks[id] === Number(k)) delete picks[id];
+      else picks[id] = Number(k);
+      localStorage.setItem("foodPicks", JSON.stringify(picks));
+      const y = window.scrollY;
+      renderFood();
+      document.querySelectorAll("#food .reveal").forEach((el) => el.classList.add("shown"));
+      window.scrollTo({ top: y });
+    } else if (t.id === "foodShare") shareFood();
+    else if (t.id === "foodReset") {
+      if (!confirm("고른 내용을 모두 지울까요?")) return;
+      localStorage.removeItem("foodPicks");
+      renderFood();
+    } else if (t.dataset.tab) setTab(t.dataset.tab);
     else if (t.dataset.plan) setPlan(t.dataset.plan);
     else if (t.dataset.toggle !== undefined) t.closest(".day").classList.toggle("open");
     else if (t.dataset.gotoMap !== undefined) {
@@ -431,6 +516,10 @@
       state.mapDay = t.dataset.mapday === "all" ? "all" : Number(t.dataset.mapday);
       renderMap();
     } else if (t.id === "shareBtn") share();
+  });
+
+  document.addEventListener("input", (e) => {
+    if (e.target.id === "foodName") localStorage.setItem("foodName", e.target.value.trim());
   });
 
   document.addEventListener("change", (e) => {
@@ -447,4 +536,5 @@
   $("#planSwitch").classList.toggle("hidden", SINGLE_PLAN);
   renderSchedule();
   renderInfo();
+  if (location.hash === "#food") setTab("food");
 })();
