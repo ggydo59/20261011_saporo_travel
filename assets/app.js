@@ -98,22 +98,38 @@
         </div>
       </div>`;
 
-    $("#days").innerHTML = plan.days
-      .map((day, i) => {
+    const today = params.get("today") || localISO(new Date());
+    const order = plan.days.map((_, i) => i);
+    if (plan.days.some((d) => d.iso === today)) {
+      const status = (d) => (d.iso === today ? 0 : d.iso > today ? 1 : 2);
+      order.sort((a, b) => status(plan.days[a]) - status(plan.days[b]) || a - b);
+    }
+
+    $("#days").innerHTML = order
+      .map((i) => {
+        const day = plan.days[i];
         const color = DAY_COLORS[i % DAY_COLORS.length];
+        const isToday = day.iso === today;
+        const isPast = day.iso < today && today <= TRIP.end;
         const items = day.items
-          .map((it) => `
+          .map((it) => {
+            const text = it.more
+              ? `<details class="more"><summary>${esc(it.text)}<i>추천 보기</i></summary><b>${esc(it.more.title)}</b><ul>${it.more.list.map(([n, d]) => `<li><b>${esc(n)}</b><span>${esc(d)}</span></li>`).join("")}</ul></details>`
+              : esc(it.text);
+            return `
             <li class="${it.type}">
               <span class="t-time">${esc(it.time)}</span>
               <span class="t-icon">${ICONS[it.type] || "•"}</span>
-              <span class="t-text">${esc(it.text)}${it.note ? `<span class="t-note">${esc(it.note)}</span>` : ""}</span>
-            </li>`)
+              <span class="t-text">${text}${it.note ? `<span class="t-note">${esc(it.note)}</span>` : ""}</span>
+            </li>`;
+          })
           .join("");
         return `
-          <article class="card day open reveal" data-day="${i}" style="--day:${color}">
+          <article class="card day ${isPast ? "past" : "open"} ${isToday ? "today" : ""} reveal" data-day="${i}" style="--day:${color}">
             <button class="day-head" data-toggle="${i}">
               <span class="day-badge"><b>${esc(day.date)}</b><small>${esc(day.dow)}</small></span>
-              <span class="day-title"><small>${i + 1}일차</small><div>${esc(day.title)}</div></span>
+              <span class="day-title"><small>${i + 1}일차${isToday ? ` <em class="tag-today">오늘</em>` : ""}${isPast ? ` <em class="tag-past">지난 일정</em>` : ""}</small><div>${esc(day.title)}</div></span>
+              <span class="wx" data-wx="${i}"></span>
               <span class="chev">▼</span>
             </button>
             <div class="day-body"><div><div class="day-inner">
@@ -128,6 +144,50 @@
       })
       .join("");
     observeReveal();
+    loadWeather(plan.days);
+  }
+
+  /* ---------- 날씨 ---------- */
+  const localISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const WX_ICON = (c) =>
+    c === 0 ? "☀️" : c <= 2 ? "🌤️" : c === 3 ? "☁️" : c <= 48 ? "🌫️" : c <= 57 ? "🌦️" : c <= 67 ? "🌧️" : c <= 77 ? "❄️" : c <= 82 ? "🌧️" : c <= 86 ? "🌨️" : "⛈️";
+  const WX_TTL = 3 * 3600 * 1000;
+
+  async function loadWeather(days) {
+    let cache = JSON.parse(localStorage.getItem("wx") || "null");
+    if (!cache || Date.now() - cache.at > WX_TTL) {
+      const keys = Object.keys(WX_PLACES);
+      const url = new URL("https://api.open-meteo.com/v1/forecast");
+      url.searchParams.set("latitude", keys.map((k) => WX_PLACES[k].lat).join(","));
+      url.searchParams.set("longitude", keys.map((k) => WX_PLACES[k].lng).join(","));
+      url.searchParams.set("daily", "weather_code,temperature_2m_max,temperature_2m_min");
+      url.searchParams.set("timezone", "Asia/Tokyo");
+      url.searchParams.set("start_date", TRIP.start);
+      url.searchParams.set("end_date", TRIP.end);
+      try {
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const json = await res.json();
+        const list = Array.isArray(json) ? json : [json];
+        const byPlace = {};
+        keys.forEach((k, n) => {
+          const d = list[n].daily;
+          byPlace[k] = Object.fromEntries(d.time.map((t, j) => [t, [d.weather_code[j], d.temperature_2m_max[j], d.temperature_2m_min[j]]]));
+        });
+        cache = { at: Date.now(), byPlace };
+        localStorage.setItem("wx", JSON.stringify(cache));
+      } catch (_) {
+        return;
+      }
+    }
+    days.forEach((day, i) => {
+      const v = cache.byPlace[day.wx]?.[day.iso];
+      const el = document.querySelector(`[data-wx="${i}"]`);
+      if (!v || !el || v[1] == null) return;
+      const [code, hi, lo] = v;
+      el.innerHTML = `<span class="wx-icon">${WX_ICON(code)}</span><span class="wx-t"><b>${Math.round(hi)}°</b><i>${Math.round(lo)}°</i></span>`;
+      el.title = `${WX_PLACES[day.wx].name} 예보 · 최고 ${hi}° / 최저 ${lo}°`;
+    });
   }
 
   /* ---------- 단풍 효과 ---------- */

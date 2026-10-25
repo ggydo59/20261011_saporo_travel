@@ -59,13 +59,26 @@ const PLACES = {
 
 // 일정 항목 type: flight | move | see | food | rest | hotel | shop
 const DAY_ARRIVE = {
-  date: "10/31", dow: "토", title: "도착 · JR로 숙소 · 스프카레",
+  date: "10/31", dow: "토", iso: "2026-10-31", wx: "sapporo", title: "도착 · JR로 숙소 · 스프카레",
   mode: "transit",
   route: ["cts", "station", "hotel1", "odori", "daiichi", "hotel1"],
   items: [
     { time: "12:25", type: "flight", text: "인천 T1 출발 (제주항공 7C1503)" },
     { time: "15:00", type: "flight", text: "신치토세공항 도착 · 입국심사·수하물", note: "보통 1시간 내외 소요" },
-    { time: "15:50", type: "shop", text: "간식 — 도착구 바로 옆 로손 (국제선 2층)", place: "cts", note: "국제선 유일의 편의점. 기차에서 먹을 간식·물만 가볍게 (저녁 스프카레 배 남겨두기)" },
+    { time: "15:50", type: "shop", text: "간식 — 도착구 바로 옆 로손 (국제선 2층)", place: "cts", note: "국제선 유일의 편의점. 기차에서 먹을 간식·물만 가볍게 (저녁 스프카레 배 남겨두기)",
+      more: {
+        title: "로손 추천 (매장·시기에 따라 없을 수 있음)",
+        list: [
+          ["가라아게군 (からあげクン)", "로손 대표 한입 치킨. 레귤러·레드(매운맛)·치즈"],
+          ["주먹밥 (おにぎり)", "연어(鮭)·명란(明太子)·연어알(いくら) 추천"],
+          ["프리미엄 롤케이크 (プレミアムロールケーキ)", "홋카이도산 생크림이 듬뿍 든 로손 디저트 스테디셀러"],
+          ["바스치 (バスチー)", "바스크 치즈케이크. 진하고 촉촉함"],
+          ["소프트 카츠겐 (ソフトカツゲン)", "홋카이도에서만 파는 새콤달콤 유산균 음료"],
+          ["코압 가라나 (コアップガラナ)", "홋카이도 대표 탄산음료. 콜라와 비슷한 맛"],
+          ["요쓰바 우유·요구르트 (よつ葉)", "홋카이도 대표 유제품 브랜드"],
+        ],
+      },
+    },
     { time: "16:00", type: "move", text: "국내선 방향 연결통로로 이동 → 지하 1층 JR 신치토세공항역 (도보 약 10분)", place: "cts", note: "표는 매표기에서 신용카드로 구매 (JR은 카드 터치 승차 불가). Suica 있으면 그대로 개찰" },
     { time: "16:15", type: "move", text: "JR 쾌속 에어포트 → 삿포로역 (37분)", place: "station", note: "시발역이라 자유석도 앉아 갈 수 있음. 약 12분 간격" },
     { time: "16:55", type: "move", text: "삿포로역 남쪽 출구 택시 승강장 → 숙소 (약 10분, 짐 때문에 2대)", note: "기사님께 '준비' 탭의 숙소 일본어 주소 보여주기. 아끼려면 지하철 난보쿠선 2정거장 스스키노역 → 도보 12분" },
@@ -83,7 +96,7 @@ const DAY_ARRIVE = {
 };
 
 const DAY_DEPART = {
-  date: "11/4", dow: "수", title: "유엔 → 쇼핑 → 공항",
+  date: "11/4", dow: "수", iso: "2026-11-04", wx: "sapporo", title: "유엔 → 쇼핑 → 공항",
   mode: "transit",
   route: ["yuen", "odori", "station", "cts"],
   items: [
@@ -116,7 +129,7 @@ const PLANS = {
     days: [
       DAY_ARRIVE,
       {
-        date: "11/1", dow: "일", title: "마루야마 · 홋카이도신궁 · 홋카이도대",
+        date: "11/1", dow: "일", iso: "2026-11-01", wx: "sapporo", title: "마루야마 · 홋카이도신궁 · 홋카이도대",
         mode: "transit",
         route: ["hotel1", "maruyama", "shrine", "odori", "hokudai", "hotel1", "susukino"],
         items: [
@@ -138,7 +151,7 @@ const PLANS = {
         ],
       },
       {
-        date: "11/2", dow: "월", title: "비에이 설경 드라이브",
+        date: "11/2", dow: "월", iso: "2026-11-02", wx: "biei", title: "비에이 설경 드라이브",
         mode: "driving",
         route: ["hotel1", "budget", "hotel1", "kenmary", "biei", "aoiike", "shirahige", "hotel1", "budget", "hotel1"],
         items: [
@@ -164,7 +177,7 @@ const PLANS = {
         ],
       },
       {
-        date: "11/3", dow: "화·공휴일", title: "오타루 당일치기 · 유엔 온천",
+        date: "11/3", dow: "화·공휴일", iso: "2026-11-03", wx: "otaru", title: "오타루 당일치기 · 유엔 온천",
         mode: "transit",
         route: ["hotel1", "yuen", "station", "otaruSta", "sankaku", "canal", "sakaimachi", "otaruSta", "station", "yuen", "station", "yuen"],
         items: [
@@ -190,6 +203,13 @@ const PLANS = {
       DAY_DEPART,
     ],
   },
+};
+
+// 일차별 날씨 지역 (Open-Meteo 예보)
+const WX_PLACES = {
+  sapporo: { name: "삿포로", lat: 43.06, lng: 141.35 },
+  biei:    { name: "비에이", lat: 43.59, lng: 142.47 },
+  otaru:   { name: "오타루", lat: 43.19, lng: 141.00 },
 };
 
 // 단풍 · 은행 · 낙엽 · 머루 · 이끼
