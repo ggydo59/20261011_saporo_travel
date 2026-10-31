@@ -581,6 +581,16 @@ main { max-width: 760px; margin: 0 auto; padding: 14px 16px 24px; }
 .progress div { height: 100%; background: linear-gradient(90deg, var(--ginkgo), var(--maple)); border-radius: 999px; transition: width 0.5s var(--ease); }
 .hint { color: var(--muted); font-size: 12px; margin: 8px 0 0; }
 
+.shop .t-notes li { position: relative; padding: 1px 0 1px 12px; font-size: 13px; color: var(--muted); }
+.shop h4 { margin: 14px 0 8px; font-size: 15px; color: var(--ink); }
+.shop-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.shop-grid li { background: var(--bg); border-radius: 12px; padding: 8px; display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; }
+.shop-grid img { width: 100%; aspect-ratio: 1; object-fit: contain; background: #fff; border-radius: 8px; margin-bottom: 4px; }
+.shop-grid b { font-size: 13.5px; line-height: 1.3; }
+.shop-grid .jp { color: var(--muted); font-size: 11.5px; }
+.shop-grid .price { color: var(--maple); font-weight: 700; }
+.shop-grid .desc { color: var(--muted); line-height: 1.4; }
+
 /* ---------- 맛집 탭 ---------- */
 .food-intro h2 { margin: 0 0 4px; font-size: 20px; color: var(--maple-deep); }
 .food-intro p { margin: 0 0 10px; color: var(--muted); font-size: 14px; }

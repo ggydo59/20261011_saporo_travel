@@ -204,7 +204,7 @@ const PLANS = {
           { time: "14:15", type: "see", text: "삿포로 시계탑 (외관 사진) → 오도리공원 산책", place: "clock",
             note: ["시계탑은 오도리역 쪽 출구로 나와 도보 약 3분", "오도리공원 단풍·TV타워"] },
           { time: "15:00", type: "shop", text: "다누키코지 — 돈키호테·드럭스토어 쇼핑", place: "tanuki",
-            note: ["지붕 있는 아케이드 · 면세는 여권 지참"] },
+            note: ["지붕 있는 아케이드 · 면세는 여권 지참", "추천템 사진 리스트는 '준비' 탭 → 돈키호테·드럭스토어 추천템"] },
           { time: "15:50", type: "rest", text: "숙소에 짐 두고 잠깐 휴식 (다누키코지에서 도보 약 10분)", place: "hotel1" },
           { time: "16:40", type: "food", text: "저녁 — 징기스칸 다루마 (17:00 개점 맞춰 도착)", place: "daruma",
             note: [
@@ -496,5 +496,55 @@ const FOOD = {
     { name: "LALA CAFE&BAR IN BIEI", cid: "17015340663147024157", desc: "비에이역 앞 티라미수 카페. 점심 후 디저트로 (10:30~17:00, 부정기 휴무)" },
     { name: "Patty's Garden", cid: "3062217207441551373", desc: "정원 카페 겸 게스트하우스. 낮(11~16시)만 영업하고 휴무일이 많아 11/4(수) 오전만 가능" },
     { name: "준페이", cid: "16732941004218246320", desc: "비에이 에비동 맛집이지만 월요일 휴무라 이번 일정(11/2)엔 불가" },
+  ],
+};
+
+// 돈키호테·드럭스토어 추천템. img는 라쿠텐 상품 썸네일, 가격은 대략 (매장마다 다름)
+const RK = "https://thumbnail.image.rakuten.co.jp/@0_mall/";
+const SHOPPING = {
+  note: [
+    "면세: 한 매장 5,000엔(세전) 이상 · 여권 필수 · 소모품은 봉인 봉투째 귀국 후 개봉",
+    "돈키호테는 계산 전 면세 할인 쿠폰 QR 보여주기 (1만엔 이상 추가 할인)",
+    "의약품은 개인이 쓸 만큼만 · 병에 든 입욕제·액체는 위탁 수하물로",
+  ],
+  groups: [
+    {
+      title: "🩹 파스·건강 — 부모님 선물 1순위",
+      items: [
+        { name: "동전파스 로이히츠보코", jp: "ロイヒつぼ膏", price: "약 1,000엔 (156매)", desc: "동전 크기 온열 파스. 예민하면 쿨(クール)", img: RK + "jetdrug/cabinet/p02-02/4987167007263-02.jpg" },
+        { name: "사론파스", jp: "サロンパスA", price: "약 1,000엔 (140매)", desc: "명함 크기 · 자극 적고 양이 많아 가성비", img: RK + "sundrug/cabinet/1/4987188100325.jpg" },
+        { name: "자석파스 피프 에레키반", jp: "ピップエレキバン", price: "약 1,200엔", desc: "약 성분 없이 자석 · 냄새가 안 남. 처음엔 130부터", img: RK + "koyama-p/cabinet/4iryouyouhin/1/4902522672641-1.jpg" },
+        { name: "로키소닌 EX 테이프", jp: "ロキソニンEXテープ", price: "약 1,500엔 (7매)", desc: "진통·소염 성분 의약품 파스 · 비싸지만 효과 좋다는 평", img: RK + "ads01/cabinet/p01/04987107631985.jpg" },
+        { name: "휴족시간", jp: "休足時間", price: "약 600엔 (18매)", desc: "많이 걸은 날 발바닥·종아리에 붙이고 자기", img: RK + "drugpure/cabinet/drugpure/4903301138525.jpg" },
+        { name: "메구리즘 증기 아이마스크", jp: "めぐりズム 蒸気でホットアイマスク", price: "약 1,300엔 (12매)", desc: "눈 위에 올리면 따뜻해지는 1회용 · 향이 약한 무향(無香料) 추천", img: RK + "e-godai/cabinet/items/49013/014/4901301460660.jpg" },
+        { name: "V로토 프리미엄 안약", jp: "Vロートプレミアム", price: "약 1,800엔", desc: "피로한 눈에 · 화한 느낌 강함 · 렌즈 착용 중엔 사용 불가", img: RK + "tsuruha/cabinet/syohin106/10152447.jpg" },
+        { name: "카베진 코와 α", jp: "キャベジンコーワα", price: "약 1,500엔~", desc: "위장약 · 과식·속쓰림에", img: RK + "drugpure/cabinet/kihon70/4987973125328.jpg" },
+        { name: "이브 퀵 DX", jp: "イブクイック頭痛薬DX", price: "약 1,200엔", desc: "두통약 · 빠르게 듣는다는 평", img: RK + "rakuten24/cabinet/855/4987300058855.jpg" },
+      ],
+    },
+    {
+      title: "🧴 화장품·생활",
+      items: [
+        { name: "센카 퍼펙트휩", jp: "センカ パーフェクトホイップ", price: "약 500엔", desc: "거품 많은 클렌징폼 스테디셀러", img: RK + "rakuten24/cabinet/477/563477.jpg" },
+        { name: "스이사이 파우더워시", jp: "スイサイ ビューティクリア パウダーウォッシュ", price: "약 1,800엔 (32개)", desc: "1회분 캡슐 효소 세안제 · 여행용으로 편함", img: RK + "homelove/cabinet/main-neko/4973167823859-raa-rk.jpg" },
+        { name: "메라노CC 미용액", jp: "メラノCC 薬用しみ集中対策美容液", price: "약 1,000엔", desc: "비타민C 미용액 · 한국보다 저렴", img: RK + "daikisone/cabinet/m/mirano9658_001.jpg" },
+        { name: "메가네 클리너 후키후키", jp: "メガネクリーナふきふき", price: "약 600엔~", desc: "1회용 안경 닦이 · 자국 없이 깨끗 · 폰 화면에도", img: RK + "24exp/cabinet/10230455/megane1.jpg" },
+      ],
+    },
+    {
+      title: "♨️ 입욕제 — 하나 골라 사기",
+      items: [
+        { name: "일본의 명탕 · 노보리베츠", jp: "日本の名湯 登別カルルス", price: "약 1,000엔", desc: "11/2에 간 노보리베츠 온천 수질·향 재현 · 기념품으로 딱", img: RK + "rakuten24/cabinet/246/4548514135246.jpg" },
+        { name: "바브 나이트 릴렉스", jp: "バブ ナイトアロマ", price: "약 600엔 (12정)", desc: "보글보글 탄산 입욕제 · 숙면용 라인 인기", img: RK + "biccamera/cabinet/product/1709/00000003212571_a01.jpg" },
+        { name: "키키유 파인히트", jp: "きき湯 ファインヒート", price: "약 500엔", desc: "탄산 입욕제 · 근육 피로·어깨 결림용", img: RK + "rakuten24/cabinet/613/4548514160613.jpg" },
+      ],
+    },
+    {
+      title: "🍬 간식",
+      items: [
+        { name: "곤약젤리", jp: "蒟蒻畑", price: "약 200엔", desc: "짜 먹는 곤약젤리 · 포도맛이 대표", img: RK + "soukaidrink/cabinet/027/4902738271027.jpg" },
+        { name: "일본 한정 킷캣", jp: "キットカット 日本酒", price: "약 600엔~", desc: "사케·말차 등 일본 한정 맛 · 선물용", img: RK + "shopen/cabinet/13868969/imgrc0123690987.jpg" },
+      ],
+    },
   ],
 };

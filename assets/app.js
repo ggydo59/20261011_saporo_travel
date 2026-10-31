@@ -475,6 +475,26 @@
         <dl class="tips">${TIPS.map((t) => `<dt>${esc(t.title)}</dt><dd>${esc(t.text)}</dd>`).join("")}</dl>
       </div>
 
+      <div class="card info shop">
+        <h3>🛍️ 돈키호테·드럭스토어 추천템</h3>
+        ${noteHtml(SHOPPING.note)}
+        ${SHOPPING.groups
+          .map((g) => `
+            <h4>${esc(g.title)}</h4>
+            <ul class="shop-grid">${g.items
+              .map((x) => `
+                <li>
+                  <img src="${x.img}?_ex=200x200" alt="${esc(x.name)}" loading="lazy" onerror="this.style.visibility='hidden'">
+                  <b>${esc(x.name)}</b>
+                  <span class="jp">${esc(x.jp)}</span>
+                  <span class="price">${esc(x.price)}</span>
+                  <span class="desc">${esc(x.desc)}</span>
+                </li>`)
+              .join("")}</ul>`)
+          .join("")}
+        <p class="hint">점원에게 일본어 이름을 보여주면 찾아줘요. 사진은 라쿠텐 상품 이미지예요.</p>
+      </div>
+
       <div class="card info checklist">
         <h3>✅ 준비 체크리스트 <small id="checkCount" style="color:var(--muted);font-weight:500;font-size:13px"></small></h3>
         <div class="progress"><div id="checkBar"></div></div>
