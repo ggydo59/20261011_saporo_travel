@@ -123,7 +123,7 @@
         const items = day.items
           .map((it) => {
             const text = it.more
-              ? `<details class="more"><summary>${esc(it.text)}<i>추천 보기</i></summary><b>${esc(it.more.title)}</b><ul>${it.more.list.map(([n, d]) => `<li><b>${esc(n)}</b><span>${esc(d)}</span></li>`).join("")}</ul></details>`
+              ? `<details class="more"><summary>${esc(it.text)}<i>${esc(it.more.label || "추천 보기")}</i></summary><b>${esc(it.more.title)}</b><ul>${it.more.list.map(([n, d]) => `<li><b>${esc(n)}</b><span>${esc(d)}</span></li>`).join("")}</ul></details>`
               : esc(it.text);
             return `
             <li class="${it.type}">
