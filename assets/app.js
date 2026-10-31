@@ -114,7 +114,13 @@
           <div><span>피로도</span><b class="fatigue">${fatigue}</b></div>
           <div><span>공유</span><button class="btn" id="shareBtn" style="padding:2px 8px">🔗 링크 공유</button></div>
           ${total ? `<div class="total"><span>현지 예상 경비 (4인 · 5일)</span><b>약 ${yen(Math.round(total / 1000) * 1000)}</b> <small>약 ${manwon(total)} · 1인 약 ${yen(Math.round(total / 4 / 100) * 100)}</small>${plan.costNote ? `<em>${esc(plan.costNote)}</em>` : ""}<em>총 예산 ${(TRIP.budgetKrw / 10000).toLocaleString("ko-KR")}만원 (항공 포함) · 환율 100엔 = 약 ${Math.round(TRIP.krwPerYen * 100)}원 기준</em></div>` : ""}
-          ${spent ? `<div class="total spent"><span>💳 지금까지 실제 지출 (${plan.days.filter((d) => d.spent).map((d) => d.date).join(", ")})</span><b>${yen(spent)}</b> <small>약 ${manwon(spent)} · 같은 날 예상 ${yen(spentEst)} 대비 ${spent >= spentEst ? "+" : "−"}${yen(Math.abs(spent - spentEst))}</small></div>` : ""}
+          ${spent ? `<details class="total spent cost">
+            <summary><span>💳 지금까지 실제 지출<small>같은 날 예상 ${yen(spentEst)} 대비 ${spent >= spentEst ? "+" : "−"}${yen(Math.abs(spent - spentEst))}</small></span><b>${yen(spent)}</b><small class="krw">${manwon(spent)}</small></summary>
+            ${plan.days
+              .filter((d) => d.spent)
+              .map((d) => `<h5>${esc(d.date)} (${esc(d.dow)}) · ${yen(sumSpent(d))}</h5><ul>${d.spent.map(([label, v]) => `<li><span>${esc(label)}</span><span>${yen(v)}</span></li>`).join("")}</ul>`)
+              .join("")}
+          </details>` : ""}
         </div>
         <div class="proscons">
           <div class="pro"><b>좋은 점</b><ul>${plan.pros.map((t) => `<li>${esc(t)}</li>`).join("")}</ul></div>
@@ -129,12 +135,12 @@
       order.sort((a, b) => status(plan.days[a]) - status(plan.days[b]) || a - b);
     }
 
-    $("#days").innerHTML = order
-      .map((i) => {
+    const isPastDay = (d) => d.iso < today && today <= TRIP.end;
+    const card = (i) => {
         const day = plan.days[i];
         const color = DAY_COLORS[i % DAY_COLORS.length];
         const isToday = day.iso === today;
-        const isPast = day.iso < today && today <= TRIP.end;
+        const isPast = isPastDay(day);
         const items = day.items
           .map((it) => {
             const text = it.more
@@ -149,7 +155,7 @@
           })
           .join("");
         return `
-          <article class="card day ${isPast ? "past" : "open"} ${isToday ? "today" : ""} reveal" data-day="${i}" style="--day:${color}">
+          <article class="card day ${isPast ? "past" : "open reveal"} ${isToday ? "today" : ""}" data-day="${i}" style="--day:${color}">
             <div class="day-top">
               <button class="day-head" data-toggle="${i}">
                 <span class="day-badge"><b>${esc(day.date)}</b><small>${esc(day.dow)}</small></span>
@@ -167,8 +173,16 @@
               </div>
             </div></div></div>
           </article>`;
-      })
-      .join("");
+    };
+    const past = order.filter((i) => isPastDay(plan.days[i]));
+    const pastSpent = past.reduce((a, i) => a + sumSpent(plan.days[i]), 0);
+    $("#days").innerHTML =
+      (past.length
+        ? `<details class="past-group">
+            <summary><span>🗂️ 지난 일정 <small>${past.map((i) => plan.days[i].date).join(", ")}</small></span>${pastSpent ? `<b>💳 ${yen(pastSpent)}</b>` : ""}</summary>
+            ${past.map(card).join("")}
+          </details>`
+        : "") + order.filter((i) => !isPastDay(plan.days[i])).map(card).join("");
     observeReveal();
     loadWeather(plan.days);
   }
