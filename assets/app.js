@@ -176,7 +176,8 @@
 
   async function loadWeather(days) {
     let cache = JSON.parse(localStorage.getItem("wx2") || "null");
-    if (!cache || Date.now() - cache.at > WX_TTL) {
+    const stale = !cache || Date.now() - cache.at > WX_TTL || Object.keys(WX_PLACES).some((k) => !cache.byPlace?.[k]);
+    if (stale) {
       const keys = Object.keys(WX_PLACES);
       const url = new URL("https://api.open-meteo.com/v1/forecast");
       url.searchParams.set("latitude", keys.map((k) => WX_PLACES[k].lat).join(","));
