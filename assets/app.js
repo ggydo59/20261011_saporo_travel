@@ -67,6 +67,7 @@
   const yen = (n) => `¥${n.toLocaleString("ko-KR")}`;
   const manwon = (y) => `${(Math.round((y * TRIP.krwPerYen) / 1000) / 10).toLocaleString("ko-KR")}만원`;
   const sumCost = (day) => (day.cost || []).reduce((a, [, v]) => a + v, 0);
+  const sumSpent = (day) => (day.spent || []).reduce((a, [, v]) => a + v, 0);
 
   function costHtml(day) {
     if (!day.cost) return "";
@@ -74,6 +75,17 @@
       <details class="cost">
         <summary><span>💴 예상 비용 (4인)</span><b>약 ${yen(Math.round(sumCost(day) / 100) * 100)}</b><small class="krw">${manwon(sumCost(day))}</small></summary>
         <ul>${day.cost.map(([label, v]) => `<li><span>${esc(label)}</span><span>${yen(v)}</span></li>`).join("")}</ul>
+      </details>${spentHtml(day)}`;
+  }
+
+  function spentHtml(day) {
+    if (!day.spent) return "";
+    const s = sumSpent(day);
+    const diff = s - sumCost(day);
+    return `
+      <details class="cost spent">
+        <summary><span>💳 실제 지출 (4인)</span><b>${yen(s)}</b><small class="krw">${manwon(s)} · 예상 ${diff >= 0 ? "+" : "−"}${yen(Math.abs(diff))}</small></summary>
+        <ul>${day.spent.map(([label, v]) => `<li><span>${esc(label)}</span><span>${yen(v)}</span></li>`).join("")}</ul>
       </details>`;
   }
 
@@ -89,6 +101,8 @@
   function renderSchedule() {
     const plan = PLANS[state.plan];
     const total = plan.days.reduce((a, d) => a + sumCost(d), 0);
+    const spent = plan.days.reduce((a, d) => a + sumSpent(d), 0);
+    const spentEst = plan.days.filter((d) => d.spent).reduce((a, d) => a + sumCost(d), 0);
     const fatigue = [1, 2, 3, 4, 5].map((n) => `<i class="${n <= plan.fatigue ? "on" : ""}"></i>`).join("");
     $("#planSummary").innerHTML = `
       <div class="card summary">
@@ -100,6 +114,7 @@
           <div><span>피로도</span><b class="fatigue">${fatigue}</b></div>
           <div><span>공유</span><button class="btn" id="shareBtn" style="padding:2px 8px">🔗 링크 공유</button></div>
           ${total ? `<div class="total"><span>현지 예상 경비 (4인 · 5일)</span><b>약 ${yen(Math.round(total / 1000) * 1000)}</b> <small>약 ${manwon(total)} · 1인 약 ${yen(Math.round(total / 4 / 100) * 100)}</small>${plan.costNote ? `<em>${esc(plan.costNote)}</em>` : ""}<em>총 예산 ${(TRIP.budgetKrw / 10000).toLocaleString("ko-KR")}만원 (항공 포함) · 환율 100엔 = 약 ${Math.round(TRIP.krwPerYen * 100)}원 기준</em></div>` : ""}
+          ${spent ? `<div class="total spent"><span>💳 지금까지 실제 지출 (${plan.days.filter((d) => d.spent).map((d) => d.date).join(", ")})</span><b>${yen(spent)}</b> <small>약 ${manwon(spent)} · 같은 날 예상 ${yen(spentEst)} 대비 ${spent >= spentEst ? "+" : "−"}${yen(Math.abs(spent - spentEst))}</small></div>` : ""}
         </div>
         <div class="proscons">
           <div class="pro"><b>좋은 점</b><ul>${plan.pros.map((t) => `<li>${esc(t)}</li>`).join("")}</ul></div>
