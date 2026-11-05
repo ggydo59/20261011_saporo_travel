@@ -626,21 +626,31 @@
   const loadOff = () => new Set(JSON.parse(localStorage.getItem("settleOff") || "[]"));
   const settleRate = () => Number(localStorage.getItem("settleRate")) || SETTLE.rate;
   const settleSplit = () => Number(localStorage.getItem("settleSplit")) || 1;
+  const loadCash = () => JSON.parse(localStorage.getItem("settleCash") || "[]");
 
   function settleSummary() {
     const off = loadOff();
     const rate = settleRate();
     const days = PLANS[state.plan].days;
     const fixed = SETTLE.fixed.map((x) => ({ x, id: settleId("fixed", x), on: !off.has(settleId("fixed", x)) }));
+    const cash = loadCash();
     const byDay = days.map((d) => ({
       d,
-      rows: (d.spent || []).map((x) => ({ x, id: settleId(d.iso, x), on: !off.has(settleId(d.iso, x)) })),
+      rows: [
+        ...(d.spent || []).map((x) => ({ x, id: settleId(d.iso, x), on: !off.has(settleId(d.iso, x)) })),
+        ...cash
+          .map((c, idx) => ({ c, idx }))
+          .filter(({ c }) => c.iso === d.iso)
+          .map(({ c, idx }) => ({ x: [c.label, c.v, "cash"], id: `cash|${idx}`, on: true, manual: idx })),
+      ],
     }));
+    const onRows = byDay.flatMap((g) => g.rows).filter((r) => r.on);
     const fixedKrw = fixed.filter((r) => r.on).reduce((a, r) => a + r.x[1], 0);
-    const yenOn = byDay.reduce((a, g) => a + g.rows.filter((r) => r.on).reduce((b, r) => b + r.x[1], 0), 0);
+    const cashYen = onRows.filter((r) => r.x[2] === "cash").reduce((a, r) => a + r.x[1], 0);
+    const yenOn = onRows.reduce((a, r) => a + r.x[1], 0);
     const offRows = [...fixed, ...byDay.flatMap((g) => g.rows)].filter((r) => !r.on);
     const total = fixedKrw + yenOn * rate;
-    return { rate, fixed, byDay, fixedKrw, yenOn, offRows, total, missing: days.filter((d) => !d.spent).map((d) => d.date) };
+    return { rate, days, fixed, byDay, fixedKrw, yenOn, cashYen, cardYen: yenOn - cashYen, offRows, total, missing: days.filter((d) => !d.spent).map((d) => d.date) };
   }
 
   function renderSettle() {
@@ -648,8 +658,8 @@
     const split = settleSplit();
     const row = (r, amount) => `
       <li class="${r.on ? "" : "off"}">
-        <label><input type="checkbox" data-settle="${esc(r.id)}" ${r.on ? "checked" : ""}><span>${esc(r.x[0])}</span></label>
-        <span class="amt">${amount}</span>
+        <label><input type="checkbox" data-settle="${esc(r.id)}" ${r.on ? "checked" : ""} ${r.manual !== undefined ? "disabled" : ""}><span>${esc(r.x[0])}${r.x[2] === "cash" ? ` <em class="tag-cash">현금</em>` : ""}</span></label>
+        <span class="amt">${amount}</span>${r.manual !== undefined ? `<button class="cash-del" data-cash-del="${r.manual}" aria-label="삭제">✕</button>` : ""}
       </li>`;
     $("#settle").innerHTML = `
       <div class="card settle-top">
@@ -657,7 +667,8 @@
         <div class="settle-total"><span>정산 합계</span><b>${won(s.total)}</b></div>
         <ul class="settle-break">
           <li><span>항공·숙소·렌트 (원화 결제)</span><span>${won(s.fixedKrw)}</span></li>
-          <li><span>현지 결제 ${yen(s.yenOn)} × ${s.rate}</span><span>${won(s.yenOn * s.rate)}</span></li>
+          <li><span>현지 카드 ${yen(s.cardYen)} × ${s.rate}</span><span>${won(s.cardYen * s.rate)}</span></li>
+          <li><span>현지 현금 ${yen(s.cashYen)} × ${s.rate}</span><span>${won(s.cashYen * s.rate)}</span></li>
           ${s.offRows.length ? `<li class="muted"><span>제외 ${s.offRows.length}건</span><span>체크 해제한 항목</span></li>` : ""}
           <li class="muted"><span>예산 ${won(TRIP.budgetKrw)} 대비</span><span>${s.total > TRIP.budgetKrw ? "+" : "−"}${won(Math.abs(s.total - TRIP.budgetKrw))}</span></li>
         </ul>
@@ -675,6 +686,17 @@
           <button class="btn solid" id="settleShare">📤 정산 내용 보내기</button>
           <button class="btn" id="settleReset">제외 초기화</button>
         </div>
+      </div>
+
+      <div class="card settle-group cash-form">
+        <h3>💴 현금 지출 추가</h3>
+        <div class="cash-row">
+          <select id="cashDay">${s.days.map((d) => `<option value="${d.iso}">${esc(d.date)} (${esc(d.dow)})</option>`).join("")}</select>
+          <input id="cashLabel" type="text" placeholder="어디에 썼나요? (예: 다루마 저녁)">
+          <input id="cashYen" type="number" inputmode="numeric" placeholder="엔">
+          <button class="btn solid" id="cashAdd">추가</button>
+        </div>
+        <p class="hint">추가한 현금 지출은 이 폰에 저장돼요. ✕로 지울 수 있어요.</p>
       </div>
 
       <div class="card settle-group">
@@ -702,8 +724,10 @@
       "[항공·숙소·렌트]",
       ...s.fixed.filter((r) => r.on).map((r) => `· ${r.x[0]}: ${won(r.x[1])}`),
       "",
-      `[현지 결제] ${yen(s.yenOn)} (1엔 = ${s.rate}원)`,
+      `[현지 결제] ${yen(s.yenOn)} = ${won(s.yenOn * s.rate)} (1엔 = ${s.rate}원)`,
+      `· 카드 ${yen(s.cardYen)} / 현금 ${yen(s.cashYen)}`,
       ...s.byDay.filter((g) => g.rows.length).map((g) => `· ${g.d.date}: ${yen(g.rows.filter((r) => r.on).reduce((a, r) => a + r.x[1], 0))}`),
+      ...(s.cashYen ? ["", "[현금 사용]", ...s.byDay.flatMap((g) => g.rows.filter((r) => r.on && r.x[2] === "cash").map((r) => `· ${g.d.date} ${r.x[0]}: ${yen(r.x[1])}`))] : []),
       ...(s.offRows.length ? ["", `[제외] ${s.offRows.map((r) => r.x[0].replace(/^\d\d:\d\d /, "")).join(", ")}`] : []),
       "",
       `합계: ${won(s.total)}`,
@@ -742,7 +766,7 @@
 
   /* ---------- 이벤트 ---------- */
   document.addEventListener("click", (e) => {
-    const t = e.target.closest("[data-tab],[data-plan],[data-toggle],[data-goto-map],[data-mapday],[data-pick],[data-split],#shareBtn,#foodShare,#foodReset,#settleShare,#settleReset");
+    const t = e.target.closest("[data-tab],[data-plan],[data-toggle],[data-goto-map],[data-mapday],[data-pick],[data-split],[data-cash-del],#cashAdd,#shareBtn,#foodShare,#foodReset,#settleShare,#settleReset");
     if (!t) return;
     if (t.dataset.pick) {
       const [id, k] = t.dataset.pick.split(":");
@@ -753,6 +777,22 @@
       const y = window.scrollY;
       renderFood();
       document.querySelectorAll("#food .reveal").forEach((el) => el.classList.add("shown"));
+      window.scrollTo({ top: y });
+    } else if (t.id === "cashAdd") {
+      const label = $("#cashLabel").value.trim();
+      const v = Math.round(Number($("#cashYen").value));
+      if (!label || !(v > 0)) return alert("내용과 금액(엔)을 입력해 주세요");
+      const cash = loadCash();
+      cash.push({ iso: $("#cashDay").value, label, v });
+      localStorage.setItem("settleCash", JSON.stringify(cash));
+      renderSettle();
+    } else if (t.dataset.cashDel !== undefined) {
+      if (!confirm("이 현금 지출을 지울까요?")) return;
+      const cash = loadCash();
+      cash.splice(Number(t.dataset.cashDel), 1);
+      localStorage.setItem("settleCash", JSON.stringify(cash));
+      const y = window.scrollY;
+      renderSettle();
       window.scrollTo({ top: y });
     } else if (t.dataset.split) {
       localStorage.setItem("settleSplit", t.dataset.split);
