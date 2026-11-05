@@ -656,9 +656,10 @@
         <h2>🧾 여행 경비 정산 <small>${esc(SETTLE.period)}</small></h2>
         <div class="settle-total"><span>정산 합계</span><b>${won(s.total)}</b></div>
         <ul class="settle-break">
-          <li><span>숙소·렌트 (원화 결제)</span><span>${won(s.fixedKrw)}</span></li>
+          <li><span>항공·숙소·렌트 (원화 결제)</span><span>${won(s.fixedKrw)}</span></li>
           <li><span>현지 결제 ${yen(s.yenOn)} × ${s.rate}</span><span>${won(s.yenOn * s.rate)}</span></li>
           ${s.offRows.length ? `<li class="muted"><span>제외 ${s.offRows.length}건</span><span>체크 해제한 항목</span></li>` : ""}
+          <li class="muted"><span>예산 ${won(TRIP.budgetKrw)} 대비</span><span>${s.total > TRIP.budgetKrw ? "+" : "−"}${won(Math.abs(s.total - TRIP.budgetKrw))}</span></li>
         </ul>
         <div class="settle-split">
           <span>나눠서 받기</span>
@@ -677,7 +678,7 @@
       </div>
 
       <div class="card settle-group">
-        <h3>🏨 숙소 · 렌트 <small>${won(s.fixedKrw)}</small></h3>
+        <h3>✈️ 항공 · 숙소 · 렌트 <small>${won(s.fixedKrw)}</small></h3>
         <ul class="settle-list">${s.fixed.map((r) => row(r, won(r.x[1]))).join("")}</ul>
       </div>
       ${s.byDay
@@ -698,7 +699,7 @@
     const lines = [
       `🧾 삿포로 가족여행 정산 (${SETTLE.period})`,
       "",
-      "[숙소·렌트]",
+      "[항공·숙소·렌트]",
       ...s.fixed.filter((r) => r.on).map((r) => `· ${r.x[0]}: ${won(r.x[1])}`),
       "",
       `[현지 결제] ${yen(s.yenOn)} (1엔 = ${s.rate}원)`,
