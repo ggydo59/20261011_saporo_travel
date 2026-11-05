@@ -135,7 +135,8 @@
       order.sort((a, b) => status(plan.days[a]) - status(plan.days[b]) || a - b);
     }
 
-    const isPastDay = (d) => d.iso < today && today <= TRIP.end;
+    const isPastDay = (d) => d.iso < today;
+    const tripDone = today > TRIP.end;
     const card = (i) => {
         const day = plan.days[i];
         const color = DAY_COLORS[i % DAY_COLORS.length];
@@ -177,9 +178,10 @@
     const past = order.filter((i) => isPastDay(plan.days[i]));
     const pastSpent = past.reduce((a, i) => a + sumSpent(plan.days[i]), 0);
     $("#days").innerHTML =
+      (tripDone ? `<button class="card done-banner" data-tab="settle"><span>✈️ 여행 끝! 수고하셨어요</span><b>🧾 경비 정산 보기 →</b></button>` : "") +
       (past.length
         ? `<details class="past-group">
-            <summary><span>🗂️ 지난 일정 <small>${past.map((i) => plan.days[i].date).join(", ")}</small></span>${pastSpent ? `<b>💳 ${yen(pastSpent)}</b>` : ""}</summary>
+            <summary><span>🗂️ ${tripDone ? "여행 일정 다시 보기" : "지난 일정"} <small>${past.map((i) => plan.days[i].date).join(", ")}</small></span>${pastSpent ? `<b>💳 ${yen(pastSpent)}</b>` : ""}</summary>
             ${past.map(card).join("")}
           </details>`
         : "") + order.filter((i) => !isPastDay(plan.days[i])).map(card).join("");
@@ -618,6 +620,109 @@
     }
   }
 
+  /* ---------- 정산 탭 ---------- */
+  const won = (n) => `${Math.round(n).toLocaleString("ko-KR")}원`;
+  const settleId = (scope, [label, v]) => `${scope}|${label}|${v}`;
+  const loadOff = () => new Set(JSON.parse(localStorage.getItem("settleOff") || "[]"));
+  const settleRate = () => Number(localStorage.getItem("settleRate")) || SETTLE.rate;
+  const settleSplit = () => Number(localStorage.getItem("settleSplit")) || 1;
+
+  function settleSummary() {
+    const off = loadOff();
+    const rate = settleRate();
+    const days = PLANS[state.plan].days;
+    const fixed = SETTLE.fixed.map((x) => ({ x, id: settleId("fixed", x), on: !off.has(settleId("fixed", x)) }));
+    const byDay = days.map((d) => ({
+      d,
+      rows: (d.spent || []).map((x) => ({ x, id: settleId(d.iso, x), on: !off.has(settleId(d.iso, x)) })),
+    }));
+    const fixedKrw = fixed.filter((r) => r.on).reduce((a, r) => a + r.x[1], 0);
+    const yenOn = byDay.reduce((a, g) => a + g.rows.filter((r) => r.on).reduce((b, r) => b + r.x[1], 0), 0);
+    const offRows = [...fixed, ...byDay.flatMap((g) => g.rows)].filter((r) => !r.on);
+    const total = fixedKrw + yenOn * rate;
+    return { rate, fixed, byDay, fixedKrw, yenOn, offRows, total, missing: days.filter((d) => !d.spent).map((d) => d.date) };
+  }
+
+  function renderSettle() {
+    const s = settleSummary();
+    const split = settleSplit();
+    const row = (r, amount) => `
+      <li class="${r.on ? "" : "off"}">
+        <label><input type="checkbox" data-settle="${esc(r.id)}" ${r.on ? "checked" : ""}><span>${esc(r.x[0])}</span></label>
+        <span class="amt">${amount}</span>
+      </li>`;
+    $("#settle").innerHTML = `
+      <div class="card settle-top">
+        <h2>🧾 여행 경비 정산 <small>${esc(SETTLE.period)}</small></h2>
+        <div class="settle-total"><span>정산 합계</span><b>${won(s.total)}</b></div>
+        <ul class="settle-break">
+          <li><span>숙소·렌트 (원화 결제)</span><span>${won(s.fixedKrw)}</span></li>
+          <li><span>현지 결제 ${yen(s.yenOn)} × ${s.rate}</span><span>${won(s.yenOn * s.rate)}</span></li>
+          ${s.offRows.length ? `<li class="muted"><span>제외 ${s.offRows.length}건</span><span>체크 해제한 항목</span></li>` : ""}
+        </ul>
+        <div class="settle-split">
+          <span>나눠서 받기</span>
+          ${[1, 2, 4].map((n) => `<button class="btn ${n === split ? "solid" : ""}" data-split="${n}">${n === 1 ? "전액" : `÷${n}`}</button>`).join("")}
+        </div>
+        <div class="settle-due"><span>아빠에게 받을 금액</span><b>${won(s.total / split)}</b></div>
+        <label class="settle-rate">환율 (1엔당 원)
+          <input id="settleRate" type="number" step="0.01" inputmode="decimal" value="${s.rate}">
+        </label>
+        <p class="hint">${esc(SETTLE.rateNote)} · 항목 체크를 해제하면 정산에서 빠져요 (이 폰에 저장)</p>
+        ${s.missing.length ? `<p class="settle-warn">⚠️ ${s.missing.join(", ")} 결제내역이 아직 없어요. 캡처를 보내주면 추가할게요.</p>` : ""}
+        <div class="food-actions">
+          <button class="btn solid" id="settleShare">📤 정산 내용 보내기</button>
+          <button class="btn" id="settleReset">제외 초기화</button>
+        </div>
+      </div>
+
+      <div class="card settle-group">
+        <h3>🏨 숙소 · 렌트 <small>${won(s.fixedKrw)}</small></h3>
+        <ul class="settle-list">${s.fixed.map((r) => row(r, won(r.x[1]))).join("")}</ul>
+      </div>
+      ${s.byDay
+        .map(({ d, rows }) => {
+          const sum = rows.filter((r) => r.on).reduce((a, r) => a + r.x[1], 0);
+          return `
+          <div class="card settle-group">
+            <h3>${esc(d.date)} (${esc(d.dow)}) <small>${rows.length ? `${yen(sum)} · ${won(sum * s.rate)}` : "내역 없음"}</small></h3>
+            ${rows.length ? `<ul class="settle-list">${rows.map((r) => row(r, yen(r.x[1]))).join("")}</ul>` : `<p class="hint">결제내역 미입력</p>`}
+          </div>`;
+        })
+        .join("")}`;
+  }
+
+  async function shareSettle() {
+    const s = settleSummary();
+    const split = settleSplit();
+    const lines = [
+      `🧾 삿포로 가족여행 정산 (${SETTLE.period})`,
+      "",
+      "[숙소·렌트]",
+      ...s.fixed.filter((r) => r.on).map((r) => `· ${r.x[0]}: ${won(r.x[1])}`),
+      "",
+      `[현지 결제] ${yen(s.yenOn)} (1엔 = ${s.rate}원)`,
+      ...s.byDay.filter((g) => g.rows.length).map((g) => `· ${g.d.date}: ${yen(g.rows.filter((r) => r.on).reduce((a, r) => a + r.x[1], 0))}`),
+      ...(s.offRows.length ? ["", `[제외] ${s.offRows.map((r) => r.x[0].replace(/^\d\d:\d\d /, "")).join(", ")}`] : []),
+      "",
+      `합계: ${won(s.total)}`,
+      ...(split > 1 ? [`받을 금액 (÷${split}): ${won(s.total / split)}`] : []),
+      "",
+      `자세히: ${location.origin}${location.pathname}#settle`,
+    ];
+    const text = lines.join("\n");
+    if (navigator.share) {
+      try { await navigator.share({ title: "삿포로 여행 정산", text }); } catch (_) { /* 취소 */ }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      alert("정산 내용을 복사했어요. 카톡에 붙여넣기 하세요!");
+    } catch (_) {
+      prompt("아래 내용을 복사하세요", text);
+    }
+  }
+
   /* ---------- 탭 ---------- */
   function setTab(tab) {
     state.tab = tab;
@@ -625,6 +730,7 @@
     document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("active", p.id === `tab-${tab}`));
     $("#planSwitch").classList.toggle("hidden", SINGLE_PLAN || tab !== "schedule");
     if (tab === "food") renderFood();
+    if (tab === "settle") renderSettle();
     if (tab === "map") {
       if (!map) initMap();
       map.invalidateSize();
@@ -635,7 +741,7 @@
 
   /* ---------- 이벤트 ---------- */
   document.addEventListener("click", (e) => {
-    const t = e.target.closest("[data-tab],[data-plan],[data-toggle],[data-goto-map],[data-mapday],[data-pick],#shareBtn,#foodShare,#foodReset");
+    const t = e.target.closest("[data-tab],[data-plan],[data-toggle],[data-goto-map],[data-mapday],[data-pick],[data-split],#shareBtn,#foodShare,#foodReset,#settleShare,#settleReset");
     if (!t) return;
     if (t.dataset.pick) {
       const [id, k] = t.dataset.pick.split(":");
@@ -647,6 +753,14 @@
       renderFood();
       document.querySelectorAll("#food .reveal").forEach((el) => el.classList.add("shown"));
       window.scrollTo({ top: y });
+    } else if (t.dataset.split) {
+      localStorage.setItem("settleSplit", t.dataset.split);
+      renderSettle();
+    } else if (t.id === "settleShare") shareSettle();
+    else if (t.id === "settleReset") {
+      if (!confirm("제외한 항목을 모두 다시 포함할까요?")) return;
+      localStorage.removeItem("settleOff");
+      renderSettle();
     } else if (t.id === "foodShare") shareFood();
     else if (t.id === "foodReset") {
       if (!confirm("고른 내용을 모두 지울까요?")) return;
@@ -666,9 +780,27 @@
 
   document.addEventListener("input", (e) => {
     if (e.target.id === "foodName") localStorage.setItem("foodName", e.target.value.trim());
+    if (e.target.id === "settleRate") {
+      const v = Number(e.target.value);
+      if (v > 0) localStorage.setItem("settleRate", String(v));
+    }
   });
 
   document.addEventListener("change", (e) => {
+    if (e.target.dataset.settle !== undefined) {
+      const off = loadOff();
+      if (e.target.checked) off.delete(e.target.dataset.settle);
+      else off.add(e.target.dataset.settle);
+      localStorage.setItem("settleOff", JSON.stringify([...off]));
+      const y = window.scrollY;
+      renderSettle();
+      window.scrollTo({ top: y });
+      return;
+    }
+    if (e.target.id === "settleRate") {
+      renderSettle();
+      return;
+    }
     if (e.target.dataset.check === undefined) return;
     const checked = JSON.parse(localStorage.getItem("checklist") || "{}");
     checked[e.target.dataset.check] = e.target.checked;
@@ -683,4 +815,5 @@
   renderSchedule();
   renderInfo();
   if (location.hash === "#food") setTab("food");
+  if (location.hash === "#settle") setTab("settle");
 })();
