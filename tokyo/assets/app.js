@@ -518,26 +518,6 @@
         <dl class="tips">${TIPS.map((t) => `<dt>${esc(t.title)}</dt><dd>${esc(t.text)}</dd>`).join("")}</dl>
       </div>
 
-      <div class="card info shop">
-        <h3>🛍️ 돈키호테·드럭스토어 추천템</h3>
-        ${noteHtml(SHOPPING.note)}
-        ${SHOPPING.groups
-          .map((g) => `
-            <h4>${esc(g.title)}</h4>
-            <ul class="shop-grid">${g.items
-              .map((x) => `
-                <li>
-                  <img src="${x.img}?_ex=200x200" alt="${esc(x.name)}" loading="lazy" onerror="this.style.visibility='hidden'">
-                  <b>${esc(x.name)}</b>
-                  <span class="jp">${esc(x.jp)}</span>
-                  <span class="price">${esc(x.price)}</span>
-                  <span class="desc">${esc(x.desc)}</span>
-                </li>`)
-              .join("")}</ul>`)
-          .join("")}
-        <p class="hint">점원에게 일본어 이름을 보여주면 찾아줘요. 사진은 라쿠텐 상품 이미지예요.</p>
-      </div>
-
       <div class="card info checklist">
         <h3>✅ 준비 체크리스트 <small id="checkCount" style="color:var(--muted);font-weight:500;font-size:13px"></small></h3>
         <div class="progress"><div id="checkBar"></div></div>
@@ -551,6 +531,31 @@
     const done = document.querySelectorAll("[data-check]:checked").length;
     $("#checkCount").textContent = `${done} / ${CHECKLIST.length}`;
     $("#checkBar").style.width = `${(done / CHECKLIST.length) * 100}%`;
+  }
+
+  /* ---------- 쇼핑 탭 ---------- */
+  const shopItem = (x) => `
+    <li>
+      ${x.img ? `<img src="${x.img}${x.img.includes("rakuten") ? "?_ex=200x200" : ""}" alt="${esc(x.name)}" loading="lazy" onerror="this.style.visibility='hidden'">` : ""}
+      <b>${esc(x.name)}</b>
+      ${x.jp ? `<span class="jp">${esc(x.jp)}</span>` : ""}
+      ${x.price ? `<span class="price">${esc(x.price)}</span>` : ""}
+      ${x.desc ? `<span class="desc">${esc(x.desc)}</span>` : ""}
+    </li>`;
+
+  function renderShop() {
+    $("#shopTab").innerHTML = SHOPS.map((shop) => {
+      const groups = shop.groups || [{ items: shop.items || [] }];
+      const count = groups.reduce((a, g) => a + g.items.length, 0);
+      return `
+      <details class="card shop-store">
+        <summary><span>${esc(shop.title)}${shop.where ? `<small>${esc(shop.where)}</small>` : ""}</span><em>${count ? `${count}개` : "준비 중"}</em></summary>
+        ${noteHtml(shop.note)}
+        ${count
+          ? groups.map((g) => `${g.title ? `<h4>${esc(g.title)}</h4>` : ""}<ul class="shop-grid">${g.items.map(shopItem).join("")}</ul>`).join("")
+          : `<p class="hint">아직 상품이 없어요. 알려주면 사진이랑 추가할게요.</p>`}
+      </details>`;
+    }).join("") + `<p class="hint" style="padding:0 4px">점원에게 일본어 이름을 보여주면 찾아줘요.</p>`;
   }
 
   /* ---------- 맛집 탭 ---------- */
@@ -776,6 +781,7 @@
     document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("active", p.id === `tab-${tab}`));
     $("#planSwitch").classList.toggle("hidden", SINGLE_PLAN || tab !== "schedule");
     if (tab === "food") renderFood();
+    if (tab === "shop") renderShop();
     if (tab === "settle") renderSettle();
     if (tab === "map") {
       if (!map) initMap();
@@ -876,6 +882,6 @@
   $("#planSwitch").classList.toggle("hidden", SINGLE_PLAN);
   renderSchedule();
   renderInfo();
-  if (location.hash === "#food") setTab("food");
+  if (location.hash === "#shop") setTab("shop");
   if (location.hash === "#settle") setTab("settle");
 })();

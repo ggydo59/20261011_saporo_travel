@@ -80,7 +80,7 @@ const PLANS = {
           { time: "21:50", type: "hotel", text: "걸어서 약 12분 → 셀프 체크인", place: "home",
             note: ["짐 무거우면 택시 (약 1,000엔)", "보안 사물함 열쇠 · 비밀번호는 호스트 안내 캡처", "밤 9시 이후 조용히 · 신발 벗기"] },
           { time: "22:30", type: "food", text: "첫날 밤 — 심야 라멘 한 그릇 or 아메요코 '도착 기념' 한잔", place: "ameyoko",
-            note: ["맛집 탭에서 투표", "* 피곤하면 편의점 털어서 숙소 수다 (토요일 아침 일찍 나가니까 체력 아끼기)"] },
+            note: ["* 피곤하면 편의점 털어서 숙소 수다 (토요일 아침 일찍 나가니까 체력 아끼기)"] },
           { time: "23:30", type: "hotel", text: "숙소로 · 내일 07:45 출발", place: "home" },
         ],
         cost: [
@@ -366,3 +366,17 @@ const SETTLE = {
   rateNote: "환율은 트래블카드 충전 내역 보고 수정",
   fixed: [],
 };
+
+// 쇼핑 탭: 가게별 접기. items: { name, jp, price, desc, img }
+const SHOPS = [
+  { title: "🏬 돈키호테 · 드럭스토어", where: "우에노·아메요코 (일 15:30)", note: SHOPPING.note, groups: SHOPPING.groups },
+  { title: "🧺 스탠다드 프로덕트", items: [] },
+  { title: "🏪 패밀리마트", where: "숙소 근처 편의점", items: [] },
+  { title: "🤍 무인양품", where: "긴자 (토 11:20)", items: [] },
+  { title: "🛋️ 니토리", where: "마로니에게이트 긴자2 (토 11:20)", items: [] },
+  { title: "🪙 쓰리피 (3COINS)", items: [] },
+  { title: "💯 다이소", items: [] },
+  { title: "🐹 치이카와 랜드", where: "도쿄역 캐릭터 스트리트 (토 16:10)", items: [] },
+  { title: "🛒 식료품", where: "OK마트 긴자 (토 19:00)", items: [] },
+  { title: "🧥 몽벨", where: "오카치마치점 10:00~21:00 · 면세 Pie VAT 앱", items: [] },
+];
